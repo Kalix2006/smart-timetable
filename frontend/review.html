@@ -4,21 +4,22 @@
     <title>Review Timetable Options</title>
     <style>
         pre {
-            background-color: #f0f0f0; 
-            padding: 10px; 
+            background-color: #f0f0f0;
+            padding: 10px;
             max-height: 300px;
             overflow: auto;
         }
         .option-box {
-            border: 1px solid black; 
-            margin: 10px; 
+            border: 1px solid black;
+            margin: 10px;
             padding: 10px;
         }
     </style>
 </head>
 <body>
     <h1>Review Timetable Options</h1>
-    <button onclick="getTimetable()">Generate Timetable</button>
+    <button onclick="getTimetable()">Generate Random Timetable</button>
+    <button onclick="getGeneticTimetable()">Generate AI-Optimized Timetable</button>
     <div id="options-container"></div>
 
     <h2>Approve Your Chosen Timetable</h2>
@@ -28,58 +29,56 @@
     <script>
         let timetableOptions = [];
 
-        async function getTimetable() {
+        async function fetchTimetable(url) {
             try {
-                const response = await fetch("http://127.0.0.1:5000/api/generate", {
+                const response = await fetch(url, {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        "classrooms": ["Room101", "Room102", "Lab1", "Lab2"],
-                        "subjects": ["Math", "Physics", "Chemistry", "CS"],
-                        "faculty": {
-                            "Math": ["Dr. A"], 
-                            "Physics": ["Dr. B"], 
-                            "Chemistry": ["Dr. C"], 
-                            "CS": ["Dr. D"]
+                        classrooms: [{name:"Room101", capacity:50},{name:"Lab1",capacity:30}],
+                        subjects: ["Math", "Physics", "Chemistry", "CS"],
+                        faculty: {
+                            "Math": ["Dr. A"], "Physics": ["Dr. B"],
+                            "Chemistry": ["Dr. C"], "CS": ["Dr. D"]
                         },
-                        "batches": ["BatchA", "BatchB"],
-                        "max_classes_per_day": 3,
-                        "faculty_leave": {
-                            "Dr. B": ["Wednesday"]
-                        }
+                        batches: ["BatchA", "BatchB"],
+                        max_classes_per_day: 3,
+                        faculty_leave: {"Dr. B": ["Wednesday"]},
+                        total_classes: 20
                     })
                 });
-
-                if (!response.ok) {
-                    throw new Error('Network response was not ok ' + response.statusText);
-                }
-
+                if (!response.ok) throw new Error(response.statusText);
                 const data = await response.json();
                 timetableOptions = data.options;
                 displayOptions(timetableOptions);
-            } catch (error) {
-                alert("Error fetching timetable: " + error.message);
+            } catch (err) {
+                alert("Error fetching timetable: " + err);
             }
+        }
+
+        function getTimetable() {
+            fetchTimetable("http://127.0.0.1:5000/api/generate");
+        }
+
+        function getGeneticTimetable() {
+            fetchTimetable("http://127.0.0.1:5000/api/generate/genetic");
         }
 
         function displayOptions(options) {
             const container = document.getElementById('options-container');
-            container.innerHTML = ""; // Clear previous options
-
-            options.forEach((option, index) => {
-                const div = document.createElement('div');
+            container.innerHTML = "";
+            options.forEach((option, idx) => {
+                const div = document.createElement("div");
                 div.className = "option-box";
-                let content = `<h3>Timetable Option ${index + 1}</h3>`;
-                for (const batch in option) {
+                let content = `<h3>Timetable Option ${idx + 1}</h3>`;
+                for (let batch in option) {
                     content += `<h4>Batch: ${batch}</h4>`;
-                    option[batch].forEach((dayClasses, dayIndex) => {
-                        content += `<b>Day ${dayIndex + 1}:</b><br/>`;
+                    option[batch].forEach((dayClasses, dayIdx) => {
+                        content += `<b>Day ${dayIdx + 1}:</b><br/>`;
                         dayClasses.forEach(cls => {
                             content += `Subject: ${cls.subject}, Faculty: ${cls.faculty}, Classroom: ${cls.classroom}<br/>`;
                         });
-                        content += `<br/>`;
+                        content += "<br/>";
                     });
                 }
                 div.innerHTML = content;
@@ -87,15 +86,27 @@
             });
         }
 
-        function approveTimetable() {
-            const choiceInput = document.getElementById('choice');
+        async function approveTimetable() {
+            const choiceInput = document.getElementById("choice");
             const choice = parseInt(choiceInput.value);
             if (isNaN(choice) || choice < 1 || choice > timetableOptions.length) {
-                alert("Please enter a valid option number between 1 and " + timetableOptions.length);
+                alert("Please enter a valid option number");
                 return;
             }
-            alert("You have approved timetable option #" + choice);
-            // Here you can add code to send the approved choice to backend to save
+            try {
+                const response = await fetch("http://127.0.0.1:5000/api/approve", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        approved_option: choice,
+                        timetable: timetableOptions[choice - 1]
+                    })
+                });
+                const result = await response.json();
+                alert(result.message);
+            } catch (e) {
+                alert("Approval failed: " + e.message);
+            }
         }
     </script>
 </body>
