@@ -1,0 +1,24 @@
+{
+    "classrooms": [
+                        {"name": "Room101", "capacity": 50},
+                        {"name": "Room102", "capacity": 40},
+                        {"name": "Lab1", "capacity": 30},
+                        {"name": "Lab2", "capacity": 20}
+                    ],
+
+    "subjects": ["Math", "Physics", "Chemistry", "CS"],
+    "faculty": {
+        "Math": ["Dr. A"],
+        "Physics": ["Dr. B"],
+        "Chemistry": ["Dr. C"],
+        "CS": ["Dr. D"]
+    },
+    "batches": ["BatchA", "BatchB", "BatchC"],
+    "max_classes_per_day": 3,
+    "faculty_leave": {
+    "Dr. B": ["Wednesday"],
+    "Dr. D": ["Friday"]
+    },
+    "departments": ["CSE", "ECE", "Civil"]
+}
+
